@@ -1,0 +1,15 @@
+.dub
+docs.json
+__dummy.html
+docs/
+/ktane
+ktane.so
+ktane.dylib
+ktane.dll
+ktane.a
+ktane.lib
+ktane-test-*
+*.exe
+*.o
+*.obj
+*.lst

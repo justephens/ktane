@@ -1,0 +1,5 @@
+name "ktane"
+description "Helper program for Keep Talking And Nobody Explodes"
+authors "Justin Stephens"
+copyright "Copyright © 2021, Justin Stephens"
+license "GPLv2"
