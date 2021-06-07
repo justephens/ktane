@@ -1,7 +1,56 @@
-import std.conv;
 import std.algorithm;
 import std.array;
 import std.container.dlist;
+import std.conv;
+import std.range;
+import std.string;
+import std.stdio;
+
+/**
+ * Runs the maze solver.
+ * param: input - a range of lines, each line holding a comma-separated
+ *      coordinate pair
+ * param: output - an output range which text is written to
+ */
+void runModule(T)(string[] input, T output)
+{
+    // Generate Maze objects from the ASCII TextMaps
+    Maze[] mazes;
+    builtInMaps.each!( tm => mazes ~= new Maze(tm) );
+
+    // Read sets of coordinate pairs from input
+    int[][] coordinates = input
+        .map!(line => line
+            .split(',')
+            .take(2)
+            .map!( a => a.strip )
+            .map!( a => a.parse!int )
+            //.map!( n => n++ )     // Uncomment to use start-from-one indexing
+            //.retro                // Uncomment to use "x,y" instead of "y,x"
+            .array
+        )
+        .array;
+
+    auto markerPos = coordinates[0].to!(int[2]);
+    auto startPos = coordinates[1].to!(int[2]);
+    auto targetPos = coordinates[2].to!(int[2]);
+
+    // Find any mazes containing marker nodes matching the provided coordinates
+    auto matchingMazes = mazes.filter!(
+            maze => maze.markers.any!(
+                mark => mark.position == markerPos
+            )
+        );
+    if (matchingMazes.count != 1)
+        throw new Exception("Found more or less than 1 matching maze");
+    
+    // Select matching maze, output it's text map
+    Maze maze = matchingMazes.front;
+    output.writeln(maze.textMap[].joiner("\n"));
+
+    // Solve maze and write instructions
+    output.writeln(maze.solveToSteps(startPos, targetPos));
+}
 
 /++
  + A KTANE Maze.
