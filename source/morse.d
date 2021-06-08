@@ -21,35 +21,44 @@ import std.typecons;
 /**
  * Runs the module
  */
-void runModule(T)(string input, T output)
+void runModule(T)(string rawInput, T output)
 {
-    // If the input is full-length or longer, we repeat the pattern 3 times, so
-    // that a staggered input scores closer on the levenshtein comparison.
-    // If input is not full-length, don't repeat
-    const size_t input_letters = input.split(' ').count;
-    const size_t repeat_n = (input_letters >= 5) ? 3 : 1;
-
-    const auto repeatedInput = input.repeat(repeat_n).joiner(" ").to!string;
-    const auto repeatedMorseWords = morseCodewordDict.keys
-            .map!( word => word.repeat(repeat_n).joiner(" ").to!string ).array;
+    /// Process the raw input so we
+    auto inputLetters = rawInput.splitter(' ')
+        .filter!(a => !a.empty)
+        .map!(a => a.strip)
+        .array;
+    string input = inputLetters.joiner(" ").to!string;
+    
+    // Calculates the minimal levenshtein distance between `b` and any substring
+    // of `a`.
+    // If `wrap` is true, considers the case where `b` might span from the end of
+    // `a` to the start of `a`.
+    auto minimalDistance(T,U)(T a, U b, bool wrap=true)
+    {
+        return a
+            .repeat( wrap ? 2 : 1 )
+            .joiner
+            .take(a.length + b.length - 1)
+            .slide(b.length)
+            .map!(str => str.to!string.levenshteinDistance(b))
+            .minElement;
+    }
 
     // Here, we compare the morse representation of each code word with the morse
     // provided by the user, and sort by similarity
-    const auto sortedMorseWords = repeatedMorseWords
-            .map!( morseWord =>
+    auto sortedMorseWords = morseCodewordDict.keys
+            .map!(morse =>
                 tuple(
-                    levenshteinDistance(morseWord, repeatedInput),
-                    morseWord
+                    minimalDistance(morse, input),
+                    morse
                 )
             )
-            .map!( n => tuple(n[0], n[1][0..$/repeat_n]) )
-            .array.sort.array;
+            .array
+            .sort;
 
 
     // Output results
-    output.writeln("\n");
-    output.writeln("Input:                  ", input, "\n");
-
     output.writeln("SCORE  WORD     FREQ    MORSE");
     foreach (morseTup; sortedMorseWords)
     {

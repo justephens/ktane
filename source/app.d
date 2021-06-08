@@ -1,5 +1,6 @@
 import std.stdio;
 import maze;
+import morse;
 
 void main(string[] args)
 {
@@ -25,6 +26,19 @@ void main(string[] args)
         writeln("Target Position: ");
         input ~= readln();
         maze.runModule(input, stdout);
+        return;
+
+    case "morse":
+        if (args.length >= 3)
+        {
+            import std.algorithm : joiner;
+            import std.conv : to;
+            morse.runModule(args[2..$].joiner(" ").to!string, stdout);
+            return;
+        }
+        writeln("Morse transcription: ");
+        string input = readln();
+        morse.runModule(input, stdout);
         return;
 
     default:
