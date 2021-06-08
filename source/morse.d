@@ -23,22 +23,43 @@ import std.typecons;
  */
 void runModule(T)(string input, T output)
 {
-    auto codewordDistances = morseCodewordDict.keys.map!( key => tuple(key.levenshteinDistance(input), key) ).array;
-    auto closestWords = codewordDistances.sort.map!(a => a[1]);
+    // If the input is full-length or longer, we repeat the pattern 3 times, so
+    // that a staggered input scores closer on the levenshtein comparison.
+    // If input is not full-length, don't repeat
+    const size_t input_letters = input.split(' ').count;
+    const size_t repeat_n = (input_letters >= 5) ? 3 : 1;
 
-    output.writeln("Input: ", input);
-    auto morseMatch = closestWords.front;
-    output.writeln("Match: ", morseMatch);
-    auto codeword = morseCodewordDict[morseMatch];
-    output.writeln("Word: ", codeword);
-    auto frequency = codewordFreqDict[codeword];
-    output.writeln("Freq: ", frequency);
+    const auto repeatedInput = input.repeat(repeat_n).joiner(" ").to!string;
+    const auto repeatedMorseWords = morseCodewordDict.keys
+            .map!( word => word.repeat(repeat_n).joiner(" ").to!string ).array;
 
-    output.writeln("\n\nAll Matches: ", closestWords.joiner("\n"));
-}
-unittest
-{
-    runModule("... .... . .-.. .-..", stdout);
+    // Here, we compare the morse representation of each code word with the morse
+    // provided by the user, and sort by similarity
+    const auto sortedMorseWords = repeatedMorseWords
+            .map!( morseWord =>
+                tuple(
+                    levenshteinDistance(morseWord, repeatedInput),
+                    morseWord
+                )
+            )
+            .map!( n => tuple(n[0], n[1][0..$/repeat_n]) )
+            .array.sort.array;
+
+
+    // Output results
+    output.writeln("\n");
+    output.writeln("Input:                  ", input, "\n");
+
+    output.writeln("SCORE  WORD     FREQ    MORSE");
+    foreach (morseTup; sortedMorseWords)
+    {
+        auto score = morseTup[0];
+        auto morse = morseTup[1];
+        auto codeword = morseCodewordDict[morse];
+        auto freq = codewordFreqDict[codeword];
+
+        output.writefln(" %-5d %-8s %-7s %s", score, codeword, freq, morse);
+    }
 }
 
 /// Maps english letters to their Morse representation
