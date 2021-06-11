@@ -19,9 +19,10 @@ import std.typecons;
 
 
 /**
- * Runs the module
+ * Runs the module, returning a range of sorted matches in the form:
+ *     tuple(score, morse, word, freq)
  */
-void runModule(T)(string rawInput, T output)
+auto runModule(string rawInput)
 {
     /// Process the raw input so we
     auto inputLetters = rawInput.splitter(' ')
@@ -48,26 +49,35 @@ void runModule(T)(string rawInput, T output)
     // Here, we compare the morse representation of each code word with the morse
     // provided by the user, and sort by similarity
     auto sortedMorseWords = morseCodewordDict.keys
-            .map!(morse =>
-                tuple(
+            .map!(delegate(morse) {
+                auto english = morseCodewordDict[morse];
+                return tuple!("score","morse","word","freq")(
                     minimalDistance(morse, input),
-                    morse
-                )
-            )
+                    morse,
+                    english,
+                    codewordFreqDict[english]
+                );
+            })
             .array
             .sort;
 
+    return sortedMorseWords;
+}
+
+/// Runs the module, printing a summary to `output`
+void runModule(T)(string rawInput, T output)
+{
+    auto matches = runModule(rawInput);
 
     // Output results
     output.writeln("SCORE  WORD     FREQ    MORSE");
-    foreach (morseTup; sortedMorseWords)
+    foreach (match; matches)
     {
-        auto score = morseTup[0];
-        auto morse = morseTup[1];
-        auto codeword = morseCodewordDict[morse];
-        auto freq = codewordFreqDict[codeword];
-
-        output.writefln(" %-5d %-8s %-7s %s", score, codeword, freq, morse);
+        output.writefln(" %-5d %-8s %-7s %s",
+            match.score,
+            match.word,
+            match.freq,
+            match.morse);
     }
 }
 

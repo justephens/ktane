@@ -1,15 +1,19 @@
 import std.stdio;
 import maze;
 import morse;
+import ui;
 
 void main(string[] args)
 {
+    // If not provided any arguments, run in user interface mode
     if (args.length < 2)
     {
-        writeln("Please specify a module to run");
+        ui.run();
         return;
     }
 
+
+    // Otherwise, switch arguments and pass on to each module
     switch (args[1])
     {
     case "maze":
